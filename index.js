@@ -323,10 +323,50 @@ app.delete('/delStaff', [
         }
     }catch(err){
         console.error(err.message);
-        res.status(500).withMessage("Internal server error")
+        res.status(500).withMessage("Server error")
     }
 })
 
+app.put('/addLockStutas',[
+    body('sid').notEmpty().withMessage("Staff id is requered")
+], async (req,res)=>{
+    try{
+        const {sid} = req.body
+        await pool.query("update staff set stutas = 'lock' where sid = $1", [sid])
+        res.json({status : '200', message : 'Permission Changed Successfully.'})
+
+    }catch(err){
+        console.error(err.message);
+        res.status(500).withMessage("Server error")
+    }
+})
+
+app.put('/addUnlockStutas',[
+    body('sid').notEmpty().withMessage("Staff id is requered")
+], async (req,res)=>{
+    try{
+        const {sid} = req.body
+        await pool.query("update staff set stutas = 'unlock' where sid = $1", [sid])
+        res.json({status : '200', message : 'Permission Changed Successfully.'})
+
+    }catch(err){
+        console.error(err.message);
+        res.status(500).withMessage("Server error")
+    }
+})
+
+app.post('/getStatus',[
+    body('sid').notEmpty().withMessage('Staff id is requeried')
+],async (req,res)=>{
+    try{
+        const {sid} = req.body
+        const rs = await pool.query('select stutas from staff where sid = $1',[sid])
+        res.json({status : '200', message : 'Success', StatusData : rs.rows})
+    }catch(err){
+        console.error(err.message);
+        res.status(500).withMessage("Server error")
+    }
+})
 app.listen(port, () => {
     console.log(`Server Starts on Port No. http://localhost:${port}`)
 })
