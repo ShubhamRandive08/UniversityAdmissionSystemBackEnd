@@ -367,6 +367,37 @@ app.post('/getStatus',[
         res.status(500).withMessage("Server error")
     }
 })
+
+app.get('/GetEvent', [], async (req,res)=>{
+    try{
+        const rs = await pool.query('select * from events')
+        res.json({status : '200', message : 'Success', EventData : rs.rows})
+    }catch(err){
+        console.error(err.message);
+        res.status(500).withMessage("Server error")
+    }
+})
+
+app.post('/insertEvent', [
+    body('event_title').notEmpty().withMessage('Title is requred'),
+    body('event_date').notEmpty().withMessage('Date is requered'),
+    body('event_time').notEmpty().withMessage('Time is requeried')
+], async (req,res)=>{
+    try{
+        const { event_title, event_date, event_time } = req.body
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        } else {
+            const r = await pool.query('insert into events(event_title, event_date, event_time) values ($1,$2,$3)',[event_title, event_date, event_time ])
+            res.json({status : '200', message : 'Event Added Successfully'})
+        }
+    }catch(err){
+        console.error(err.message);
+        res.status(500).withMessage("Server error")
+    }
+})
 app.listen(port, () => {
     console.log(`Server Starts on Port No. http://localhost:${port}`)
 })
