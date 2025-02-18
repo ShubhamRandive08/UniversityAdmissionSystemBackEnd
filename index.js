@@ -22,6 +22,152 @@ app.get('/', async (req, res) => {
     res.send('APIs for the Collage Addmission Process.');
 })
 
+app.put('/uptStudData', [
+    body('fname').notEmpty().withMessage("First Name is required."),
+    body('mname').notEmpty().withMessage("Second Name is required."),
+    body('lname').notEmpty().withMessage("Last Name is required."),
+    body('gender').notEmpty().withMessage("Gender is required."),
+    body('twm').notEmpty().withMessage("12th is required."),
+    body('tenm').notEmpty().withMessage("10th is required."),
+    body('add').notEmpty().withMessage("Address is required."),
+    body('state').notEmpty().withMessage("State is required."),
+    body('ffees').notEmpty().withMessage("Fill fees is required."),
+    body('aadharno').notEmpty().withMessage("Aadhar no. is required."),
+    body('id').notEmpty().withMessage("ID is required.")
+
+], async (req, res) => {
+    try {
+        const { fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id } = req.body
+
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        } else {
+            await pool.query('update newstudent set fname = $1, mname = $2, lname = $3, gender = $4, twelvem = $5, tenm = $6, address = $7, state = $8, fillfees = $9, addharno = $10 where id = $11', [fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id])
+            res.json({ status: '200', message: 'Update Success' })
+        }
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage("Server Error")
+    }
+})
+
+// Update the single record fromthe database
+app.patch('/inrtStudent', [
+    body('fname').optional().notEmpty().withMessage("First Name is required."),
+    body('mname').optional().notEmpty().withMessage("Second Name is required."),
+    body('lname').optional().notEmpty().withMessage("Last Name is required."),
+    body('gender').optional().notEmpty().withMessage("Gender is required."),
+    body('twm').optional().notEmpty().withMessage("12th is required."),
+    body('tenm').optional().notEmpty().withMessage("10th is required."),
+    body('add').optional().notEmpty().withMessage("Address is required."),
+    body('state').optional().notEmpty().withMessage("State is required."),
+    body('ffees').optional().notEmpty().withMessage("Fill fees is required."),
+    body('aadharno').optional().notEmpty().withMessage("Aadhar no. is required."),
+    body('id').notEmpty().withMessage("ID is required.")
+  ], async (req, res) => {
+    try {
+      // Validate the request body
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+  
+      // Extract the data from the body
+      const { fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id } = req.body;
+  
+      // Step 1: Check if the student exists in the database
+      const findStudentResult = await pool.query('SELECT * FROM newstudent WHERE id = $1', [id]);
+      const student = findStudentResult.rows[0];
+  
+      if (!student) {
+        return res.status(404).json({ message: 'Student not found' });
+      }
+  
+      // Step 2: Prepare the update query dynamically based on the fields provided
+      let updateQuery = 'UPDATE newstudent SET';
+      let updateValues = [];
+      let queryIndex = 1;
+  
+      // Add the fields to update only if they are provided in the request
+      if (fname) {
+        updateQuery += ` fname = $${queryIndex},`;
+        updateValues.push(fname);
+        queryIndex++;
+      }
+      if (mname) {
+        updateQuery += ` mname = $${queryIndex},`;
+        updateValues.push(mname);
+        queryIndex++;
+      }
+      if (lname) {
+        updateQuery += ` lname = $${queryIndex},`;
+        updateValues.push(lname);
+        queryIndex++;
+      }
+      if (gender) {
+        updateQuery += ` gender = $${queryIndex},`;
+        updateValues.push(gender);
+        queryIndex++;
+      }
+      if (twm) {
+        updateQuery += ` twm = $${queryIndex},`;
+        updateValues.push(twm);
+        queryIndex++;
+      }
+      if (tenm) {
+        updateQuery += ` tenm = $${queryIndex},`;
+        updateValues.push(tenm);
+        queryIndex++;
+      }
+      if (add) {
+        updateQuery += ` add = $${queryIndex},`;
+        updateValues.push(add);
+        queryIndex++;
+      }
+      if (state) {
+        updateQuery += ` state = $${queryIndex},`;
+        updateValues.push(state);
+        queryIndex++;
+      }
+      if (ffees) {
+        updateQuery += ` ffees = $${queryIndex},`;
+        updateValues.push(ffees);
+        queryIndex++;
+      }
+      if (aadharno) {
+        updateQuery += ` aadharno = $${queryIndex},`;
+        updateValues.push(aadharno);
+        queryIndex++;
+      }
+  
+      // Remove trailing comma and append the WHERE clause
+      updateQuery = updateQuery.slice(0, -1); // Remove the last comma
+      updateQuery += ` WHERE id = $${queryIndex}`;
+      updateValues.push(id); // Add ID to the query parameters
+  
+      // Step 3: Execute the update query
+      await pool.query(updateQuery, updateValues);
+  
+      // Step 4: Retrieve the updated student from the database
+      const updatedStudentResult = await pool.query('SELECT * FROM newstudent WHERE id = $1', [id]);
+      const updatedStudent = updatedStudentResult.rows[0];
+  
+      // Return the updated student data in the response
+      res.status(200).json({
+        status: '200',
+        message: 'Student updated successfully',
+        updatedStudent
+      });
+  
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).json({ message: 'Server Error' });
+    }
+  });
+  
+
 app.post('/staff', [
     body('email').notEmpty().withMessage('Username is required'),
     body('pass').notEmpty().withMessage('Password is required')
@@ -238,36 +384,7 @@ app.post('/studDataOnId', [
     }
 })
 
-app.put('/uptStudData', [
-    body('fname').notEmpty().withMessage("First Name is required."),
-    body('mname').notEmpty().withMessage("Second Name is required."),
-    body('lname').notEmpty().withMessage("Last Name is required."),
-    body('gender').notEmpty().withMessage("Gender is required."),
-    body('twm').notEmpty().withMessage("12th is required."),
-    body('tenm').notEmpty().withMessage("10th is required."),
-    body('add').notEmpty().withMessage("Address is required."),
-    body('state').notEmpty().withMessage("State is required."),
-    body('ffees').notEmpty().withMessage("Fill fees is required."),
-    body('aadharno').notEmpty().withMessage("Aadhar no. is required."),
-    body('id').notEmpty().withMessage("ID is required.")
 
-], async (req, res) => {
-    try {
-        const { fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id } = req.body
-
-        const errors = validationResult(req)
-
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() })
-        } else {
-            await pool.query('update newstudent set fname = $1, mname = $2, lname = $3, gender = $4, twelvem = $5, tenm = $6, address = $7, state = $8, fillfees = $9, addharno = $10 where id = $11', [fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id])
-            res.json({ status: '200', message: 'Update Success' })
-        }
-    } catch (err) {
-        console.error(err.message)
-        res.status(500).withMessage("Server Error")
-    }
-})
 
 app.delete('/delStudent', [
     body('id').notEmpty().withMessage("ID is requeried")
