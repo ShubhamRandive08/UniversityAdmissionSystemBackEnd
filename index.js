@@ -194,6 +194,12 @@ app.get('/Sdata', async (req, res) => {
     res.json({ data: rs.rows })
 })
 
+// Only for testing pu
+app.get("/TeacherNameData", [], async (req,res) => {
+    const rs = await pool.query('select * from staff where tname = $1', ['testuser'])
+    res.json({status : '200', message : 'success', data : rs.rows})
+})
+
 app.post('/staffData', [
     body('email').notEmpty().withMessage('Username is required'),
     body('pass').notEmpty().withMessage('Password is required')
