@@ -196,7 +196,7 @@ app.get('/Sdata', async (req, res) => {
 
 // Only for testing pu
 app.get("/TeacherNameData", [], async (req,res) => {
-    const rs = await pool.query('select * from staff where tname = $1', ['testuser'])
+    const rs = await pool.query('select * from staff where tname = $1', ['testreviewer'])
     res.json({status : '200', message : 'success', data : rs.rows})
 })
 
