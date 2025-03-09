@@ -190,7 +190,7 @@ app.post('/staff', [
 })
 
 app.get('/Sdata', async (req, res) => {
-    const rs = await pool.query('select * from staff ')
+    const rs = await pool.query('select * from staff order by tname asc')
     res.json({ data: rs.rows })
 })
 
@@ -199,6 +199,26 @@ app.get("/TeacherNameData", [], async (req,res) => {
     const rs = await pool.query('select * from staff where tname = $1', ['testreviewer'])
     res.json({status : '200', message : 'success', data : rs.rows})
 })
+
+app.get('/TeacherName/:teachername', [], async(req,res) =>{
+    const {teachername} =  req.params
+    const rs = await pool.query('select * from staff where tname = $1', [teachername])
+    res.json({status : '200', message : 'success', data : rs.rows})
+})
+
+app.get('/studDataOnId/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const rs = await pool.query('select * from newstudent where tid = $1', [id]);
+        if (rs.rows.length === 0) {
+            return res.status(404).json({ status: '404', message: 'Student not found' });
+        }
+        res.json({ status: '200', message: 'success', studData: rs.rows });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ status: '500', message: 'Server Error' });
+    }
+});
 
 app.post('/staffData', [
     body('email').notEmpty().withMessage('Username is required'),
@@ -258,6 +278,7 @@ app.get('/studData', [], async (req, res) => {
         res.status(500).withMessage('Server Error')
     }
 })
+
 
 app.post('/insertStudent', [
     body('fname').notEmpty().withMessage('First name is required.'),
