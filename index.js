@@ -7,15 +7,41 @@ const port = 3000;
 const jwt = require('jsonwebtoken')
 const { body, validationResult } = require('express-validator')
 const bcrypt = require('bcrypt')
+const { error } = require('console')
 
 app.use(bodyparser.json())
+
+const users = [
+    {
+        name : 'Shubham',
+        age : 43
+    }
+]
 
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "DELETE,GET,HEAD,OPTIONS,POST,PUT");
-    res.header("Access-Control-Allow-Headers", "Origin,X-Requested-With,Content-Type");
+    res.header("Access-Control-Allow-Headers", "Origin,X-Requested-With,Content-Type,Authorization");
     next();
 })
+
+app.post('/getToken', [], (req,res) => {
+    const {key} = req.body
+    const token = jwt.sign({key},'super-secret', {expiresIn : '24h'})
+    res.send({token})
+})
+
+
+async function auth(req,res,next) {
+    try{
+        const token = req.headers.authorization.replace('Bearer ', '')
+        await jwt.verify(token, 'super-secret')
+        req.token = token
+        next()
+    }catch(err){
+        res.status(401).send({error : 'Please authenticate'})
+    }
+}
 
 
 app.get('/', async (req, res) => {
@@ -189,9 +215,10 @@ app.post('/staff', [
     }
 })
 
-app.get('/Sdata', async (req, res) => {
+
+app.get('/Sdata', auth, async (req, res) => {
     const rs = await pool.query('select * from staff order by tname asc')
-    res.json({ data: rs.rows })
+    res.json({ status : '200' , message : 'Success', data: rs.rows })
 })
 
 // Only for testing pu
