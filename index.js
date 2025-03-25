@@ -11,13 +11,6 @@ const { error } = require('console')
 
 app.use(bodyparser.json())
 
-const users = [
-    {
-        name : 'Shubham',
-        age : 43
-    }
-]
-
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "DELETE,GET,HEAD,OPTIONS,POST,PUT");
@@ -25,7 +18,7 @@ app.use((req, res, next) => {
     next();
 })
 
-app.post('/getToken', [], (req,res) => {
+app.post('/api/auth/getToken', [], (req,res) => {
     const {key} = req.body
     const token = jwt.sign({key},'super-secret', {expiresIn : '24h'})
     res.send({token})
@@ -283,10 +276,10 @@ app.post('/insertStaff', [
         } else {
             const rs = await pool.query('select email from staff where email = $1', [email]);
             if (rs.rows.length > 0) {
-                res.json({ message: 'Email is already exist...' })
+                res.json({ status : '200',message: 'Email is already exist...', data : rs.rows })
             } else {
                 await pool.query('insert into staff(tname,email,username,password) values ($1,$2,$3,$4)', [tname, email, username, password]);
-                res.json({ status: '200', message: 'Admin Registration Successful' })
+                res.json({ status: '200', message: 'Admin Registration Successful', data : req.body})
             }
         }
 
