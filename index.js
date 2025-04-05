@@ -209,7 +209,7 @@ app.post('/staff', [
 })
 
 
-app.get('/Sdata', auth, async (req, res) => {
+app.get('/Sdata', async (req, res) => {
     const rs = await pool.query('select * from staff order by tname asc')
     res.json({ status : '200' , message : 'Success', data: rs.rows })
 })
