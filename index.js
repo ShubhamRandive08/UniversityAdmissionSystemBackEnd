@@ -299,6 +299,21 @@ app.get('/studData', [], async (req, res) => {
     }
 })
 
+app.put('/updateAdmissionStatus', 
+    [
+        body('id').notEmpty().withMessage('ID is required'),
+        body('status').notEmpty().withMessage('Status is required')
+    ], 
+    async (req,res) =>{
+        try{
+            const {id, status} = req.body;
+
+            const rs = await pool.query('update  newstudent set status = $1 where id = $2', [status,id])
+            res.json({status : '200', message : 'Success'})
+        }catch(err){
+            console.error(err.message)
+        }
+})
 
 app.post('/insertStudent', [
     body('fname').notEmpty().withMessage('First name is required.'),
@@ -317,11 +332,12 @@ app.post('/insertStudent', [
     body('addharno').notEmpty().withMessage('Aadhar no. is required.'),
     body('tid').notEmpty().withMessage('Teacher ID is required.'),
     body('tname').notEmpty().withMessage('Teacher Name is required.'),
-    body('date').notEmpty().withMessage('Date is required.')
+    body('date').notEmpty().withMessage('Date is required.'),
+    body('status').notEmpty().withMessage('Date is required.')
 
 ], async (req, res) => {
     try {
-        const { fname, mname, lname, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date } = req.body
+        const { fname, mname, lname, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date,status } = req.body
 
         const errors = validationResult(req)
 
@@ -333,8 +349,8 @@ app.post('/insertStudent', [
             if (rs.rows.length > 0) {
                 res.json({ status: '200', message: 'Student already exist' })
             } else {
-                await pool.query('insert into newstudent(fname,mname,lname,gender,dob,twelvem,tenm,address,state,mbno,city,fillfees,addharno,tid,pcode,tname,date) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)', [fname, mname, lname, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date])
-                res.json({ status: '200', message: 'Student addmission conforimed' })
+                await pool.query('insert into newstudent(fname,mname,lname,gender,dob,twelvem,tenm,address,state,mbno,city,fillfees,addharno,tid,pcode,tname,date,status) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)', [fname, mname, lname, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date,status])
+                res.json({ status: '200', message: 'Student addmission Application Successed !' })
             }
         }
     } catch (err) {
