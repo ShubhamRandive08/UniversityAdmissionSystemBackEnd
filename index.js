@@ -299,16 +299,28 @@ app.get('/studData', [], async (req, res) => {
     }
 })
 
+const today = new Date();
+
+    // Format the date (e.g., "December 8, 2024")
+    const formattedDate = today.toLocaleDateString('en-IN', {
+      weekday: 'long', // Day of the week (e.g., Monday)
+      year: 'numeric', // Full year (e.g., 2024)
+      month: 'long',   // Full month name (e.g., December)
+      day: 'numeric',   // Day of the month (e.g., 8)
+      timeZone: 'Asia/Kolkata' // Ensure the time zone is IST
+    });
+
 app.put('/updateAdmissionStatus', 
     [
         body('id').notEmpty().withMessage('ID is required'),
-        body('status').notEmpty().withMessage('Status is required')
+        body('status').notEmpty().withMessage('Status is required'),
+        body('admin_aprov_date').notEmpty().withMessage('Status is required'),
     ], 
     async (req,res) =>{
         try{
-            const {id, status} = req.body;
+            const {id, status,admin_aprov_date = formattedDate} = req.body;
 
-            const rs = await pool.query('update  newstudent set status = $1 where id = $2', [status,id])
+            const rs = await pool.query('update  newstudent set status = $1, admin_aprov_date = $2 where id = $3', [status,admin_aprov_date,id])
             res.json({status : '200', message : 'Success'})
         }catch(err){
             console.error(err.message)
