@@ -318,9 +318,9 @@ app.put('/updateAdmissionStatus',
     ], 
     async (req,res) =>{
         try{
-            const {id, status,admin_aprov_date = formattedDate} = req.body;
+            const {id, status,admin_aprov_date = formattedDate,reject_resone} = req.body;
 
-            const rs = await pool.query('update  newstudent set status = $1, admin_aprov_date = $2 where id = $3', [status,admin_aprov_date,id])
+            const rs = await pool.query('update  newstudent set status = $1, admin_aprov_date = $2 , reject_resone = $3  where id = $4', [status,admin_aprov_date,reject_resone,id])
             res.json({status : '200', message : 'Success'})
         }catch(err){
             console.error(err.message)
