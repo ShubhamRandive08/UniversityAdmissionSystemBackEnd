@@ -240,6 +240,20 @@ app.get('/studDataOnId/:id', async (req, res) => {
     }
 });
 
+app.post('/studDataOnStudentId', async (req, res) => {
+    try {
+        const { id } = req.body;
+        const rs = await pool.query('select * from newstudent where id = $1', [id]);
+        if (rs.rows.length === 0) {
+            return res.status(404).json({ status: '404', message: 'Student not found' });
+        }
+        res.json({ status: '200', message: 'success', studData: rs.rows });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ status: '500', message: 'Server Error' });
+    }
+});
+
 app.post('/staffData', [
     body('email').notEmpty().withMessage('Username is required'),
     body('pass').notEmpty().withMessage('Password is required')
