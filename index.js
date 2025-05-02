@@ -18,21 +18,21 @@ app.use((req, res, next) => {
     next();
 })
 
-app.post('/api/auth/getToken', [], (req,res) => {
-    const {key} = req.body
-    const token = jwt.sign({key},'super-secret', {expiresIn : '24h'})
-    res.send({token})
+app.post('/api/auth/getToken', [], (req, res) => {
+    const { key } = req.body
+    const token = jwt.sign({ key }, 'super-secret', { expiresIn: '24h' })
+    res.send({ token })
 })
 
 
-async function auth(req,res,next) {
-    try{
+async function auth(req, res, next) {
+    try {
         const token = req.headers.authorization.replace('Bearer ', '')
         await jwt.verify(token, 'super-secret')
         req.token = token
         next()
-    }catch(err){
-        res.status(401).send({error : 'Please authenticate'})
+    } catch (err) {
+        res.status(401).send({ error: 'Please authenticate' })
     }
 }
 
@@ -85,107 +85,107 @@ app.patch('/inrtStudent', [
     body('ffees').optional().notEmpty().withMessage("Fill fees is required."),
     body('aadharno').optional().notEmpty().withMessage("Aadhar no. is required."),
     body('id').notEmpty().withMessage("ID is required.")
-  ], async (req, res) => {
+], async (req, res) => {
     try {
-      // Validate the request body
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-  
-      // Extract the data from the body
-      const { fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id } = req.body;
-  
-      // Step 1: Check if the student exists in the database
-      const findStudentResult = await pool.query('SELECT * FROM newstudent WHERE id = $1', [id]);
-      const student = findStudentResult.rows[0];
-  
-      if (!student) {
-        return res.status(404).json({ message: 'Student not found' });
-      }
-  
-      // Step 2: Prepare the update query dynamically based on the fields provided
-      let updateQuery = 'UPDATE newstudent SET';
-      let updateValues = [];
-      let queryIndex = 1;
-  
-      // Add the fields to update only if they are provided in the request
-      if (fname) {
-        updateQuery += ` fname = $${queryIndex},`;
-        updateValues.push(fname);
-        queryIndex++;
-      }
-      if (mname) {
-        updateQuery += ` mname = $${queryIndex},`;
-        updateValues.push(mname);
-        queryIndex++;
-      }
-      if (lname) {
-        updateQuery += ` lname = $${queryIndex},`;
-        updateValues.push(lname);
-        queryIndex++;
-      }
-      if (gender) {
-        updateQuery += ` gender = $${queryIndex},`;
-        updateValues.push(gender);
-        queryIndex++;
-      }
-      if (twm) {
-        updateQuery += ` twm = $${queryIndex},`;
-        updateValues.push(twm);
-        queryIndex++;
-      }
-      if (tenm) {
-        updateQuery += ` tenm = $${queryIndex},`;
-        updateValues.push(tenm);
-        queryIndex++;
-      }
-      if (add) {
-        updateQuery += ` add = $${queryIndex},`;
-        updateValues.push(add);
-        queryIndex++;
-      }
-      if (state) {
-        updateQuery += ` state = $${queryIndex},`;
-        updateValues.push(state);
-        queryIndex++;
-      }
-      if (ffees) {
-        updateQuery += ` ffees = $${queryIndex},`;
-        updateValues.push(ffees);
-        queryIndex++;
-      }
-      if (aadharno) {
-        updateQuery += ` aadharno = $${queryIndex},`;
-        updateValues.push(aadharno);
-        queryIndex++;
-      }
-  
-      // Remove trailing comma and append the WHERE clause
-      updateQuery = updateQuery.slice(0, -1); // Remove the last comma
-      updateQuery += ` WHERE id = $${queryIndex}`;
-      updateValues.push(id); // Add ID to the query parameters
-  
-      // Step 3: Execute the update query
-      await pool.query(updateQuery, updateValues);
-  
-      // Step 4: Retrieve the updated student from the database
-      const updatedStudentResult = await pool.query('SELECT * FROM newstudent WHERE id = $1', [id]);
-      const updatedStudent = updatedStudentResult.rows[0];
-  
-      // Return the updated student data in the response
-      res.status(200).json({
-        status: '200',
-        message: 'Student updated successfully',
-        updatedStudent
-      });
-  
+        // Validate the request body
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        // Extract the data from the body
+        const { fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id } = req.body;
+
+        // Step 1: Check if the student exists in the database
+        const findStudentResult = await pool.query('SELECT * FROM newstudent WHERE id = $1', [id]);
+        const student = findStudentResult.rows[0];
+
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        // Step 2: Prepare the update query dynamically based on the fields provided
+        let updateQuery = 'UPDATE newstudent SET';
+        let updateValues = [];
+        let queryIndex = 1;
+
+        // Add the fields to update only if they are provided in the request
+        if (fname) {
+            updateQuery += ` fname = $${queryIndex},`;
+            updateValues.push(fname);
+            queryIndex++;
+        }
+        if (mname) {
+            updateQuery += ` mname = $${queryIndex},`;
+            updateValues.push(mname);
+            queryIndex++;
+        }
+        if (lname) {
+            updateQuery += ` lname = $${queryIndex},`;
+            updateValues.push(lname);
+            queryIndex++;
+        }
+        if (gender) {
+            updateQuery += ` gender = $${queryIndex},`;
+            updateValues.push(gender);
+            queryIndex++;
+        }
+        if (twm) {
+            updateQuery += ` twm = $${queryIndex},`;
+            updateValues.push(twm);
+            queryIndex++;
+        }
+        if (tenm) {
+            updateQuery += ` tenm = $${queryIndex},`;
+            updateValues.push(tenm);
+            queryIndex++;
+        }
+        if (add) {
+            updateQuery += ` add = $${queryIndex},`;
+            updateValues.push(add);
+            queryIndex++;
+        }
+        if (state) {
+            updateQuery += ` state = $${queryIndex},`;
+            updateValues.push(state);
+            queryIndex++;
+        }
+        if (ffees) {
+            updateQuery += ` ffees = $${queryIndex},`;
+            updateValues.push(ffees);
+            queryIndex++;
+        }
+        if (aadharno) {
+            updateQuery += ` aadharno = $${queryIndex},`;
+            updateValues.push(aadharno);
+            queryIndex++;
+        }
+
+        // Remove trailing comma and append the WHERE clause
+        updateQuery = updateQuery.slice(0, -1); // Remove the last comma
+        updateQuery += ` WHERE id = $${queryIndex}`;
+        updateValues.push(id); // Add ID to the query parameters
+
+        // Step 3: Execute the update query
+        await pool.query(updateQuery, updateValues);
+
+        // Step 4: Retrieve the updated student from the database
+        const updatedStudentResult = await pool.query('SELECT * FROM newstudent WHERE id = $1', [id]);
+        const updatedStudent = updatedStudentResult.rows[0];
+
+        // Return the updated student data in the response
+        res.status(200).json({
+            status: '200',
+            message: 'Student updated successfully',
+            updatedStudent
+        });
+
     } catch (err) {
-      console.error(err.message);
-      res.status(500).json({ message: 'Server Error' });
+        console.error(err.message);
+        res.status(500).json({ message: 'Server Error' });
     }
-  });
-  
+});
+
 
 app.post('/staff', [
     body('email').notEmpty().withMessage('Username is required'),
@@ -211,19 +211,19 @@ app.post('/staff', [
 
 app.get('/Sdata', async (req, res) => {
     const rs = await pool.query('select * from staff order by tname asc')
-    res.json({ status : '200' , message : 'Success', data: rs.rows })
+    res.json({ status: '200', message: 'Success', data: rs.rows })
 })
 
 // Only for testing pu
-app.get("/TeacherNameData", [], async (req,res) => {
+app.get("/TeacherNameData", [], async (req, res) => {
     const rs = await pool.query('select * from staff where tname = $1', ['testreviewer'])
-    res.json({status : '200', message : 'success', data : rs.rows})
+    res.json({ status: '200', message: 'success', data: rs.rows })
 })
 
-app.get('/TeacherName/:teachername', [], async(req,res) =>{
-    const {teachername} =  req.params
+app.get('/TeacherName/:teachername', [], async (req, res) => {
+    const { teachername } = req.params
     const rs = await pool.query('select * from staff where tname = $1', [teachername])
-    res.json({status : '200', message : 'success', data : rs.rows})
+    res.json({ status: '200', message: 'success', data: rs.rows })
 })
 
 app.get('/studDataOnId/:id', async (req, res) => {
@@ -253,6 +253,22 @@ app.post('/studDataOnStudentId', async (req, res) => {
         res.status(500).json({ status: '500', message: 'Server Error' });
     }
 });
+
+// API for the update the fees of the student 
+
+app.put('/updateFees', [
+    body('fee').notEmpty().withMessage("Fee is required"),
+    body('id').notEmpty().withMessage("ID is required")
+], async (req, res) => {
+    try {
+        const {fee,id} = req.body
+        const rs = await pool.query('update newstudent set fillfees = $1 where id = $2',[fee,id])
+        res.json({status : '200', message : 'success' , fee : res.rows})
+    } catch (err) {
+        console.error(err.message)
+        // res.status(500).withMessage('Server Error')
+    }
+})
 
 app.post('/staffData', [
     body('email').notEmpty().withMessage('Username is required'),
@@ -290,10 +306,10 @@ app.post('/insertStaff', [
         } else {
             const rs = await pool.query('select email from staff where email = $1', [email]);
             if (rs.rows.length > 0) {
-                res.json({ status : '200',message: 'Email is already exist...', data : rs.rows })
+                res.json({ status: '200', message: 'Email is already exist...', data: rs.rows })
             } else {
                 await pool.query('insert into staff(tname,email,username,password) values ($1,$2,$3,$4)', [tname, email, username, password]);
-                res.json({ status: '200', message: 'Admin Registration Successful', data : req.body})
+                res.json({ status: '200', message: 'Admin Registration Successful', data: req.body })
             }
         }
 
@@ -315,31 +331,31 @@ app.get('/studData', [], async (req, res) => {
 
 const today = new Date();
 
-    // Format the date (e.g., "December 8, 2024")
-    const formattedDate = today.toLocaleDateString('en-IN', {
-      weekday: 'long', // Day of the week (e.g., Monday)
-      year: 'numeric', // Full year (e.g., 2024)
-      month: 'long',   // Full month name (e.g., December)
-      day: 'numeric',   // Day of the month (e.g., 8)
-      timeZone: 'Asia/Kolkata' // Ensure the time zone is IST
-    });
+// Format the date (e.g., "December 8, 2024")
+const formattedDate = today.toLocaleDateString('en-IN', {
+    weekday: 'long', // Day of the week (e.g., Monday)
+    year: 'numeric', // Full year (e.g., 2024)
+    month: 'long',   // Full month name (e.g., December)
+    day: 'numeric',   // Day of the month (e.g., 8)
+    timeZone: 'Asia/Kolkata' // Ensure the time zone is IST
+});
 
-app.put('/updateAdmissionStatus', 
+app.put('/updateAdmissionStatus',
     [
         body('id').notEmpty().withMessage('ID is required'),
         body('status').notEmpty().withMessage('Status is required'),
         body('admin_aprov_date').notEmpty().withMessage('Status is required'),
-    ], 
-    async (req,res) =>{
-        try{
-            const {id, status,admin_aprov_date = formattedDate,reject_resone} = req.body;
+    ],
+    async (req, res) => {
+        try {
+            const { id, status, admin_aprov_date = formattedDate, reject_resone } = req.body;
 
-            const rs = await pool.query('update  newstudent set status = $1, admin_aprov_date = $2 , reject_resone = $3  where id = $4', [status,admin_aprov_date,reject_resone,id])
-            res.json({status : '200', message : 'Success'})
-        }catch(err){
+            const rs = await pool.query('update  newstudent set status = $1, admin_aprov_date = $2 , reject_resone = $3  where id = $4', [status, admin_aprov_date, reject_resone, id])
+            res.json({ status: '200', message: 'Success' })
+        } catch (err) {
             console.error(err.message)
         }
-})
+    })
 
 app.post('/insertStudent', [
     body('fname').notEmpty().withMessage('First name is required.'),
@@ -363,7 +379,7 @@ app.post('/insertStudent', [
 
 ], async (req, res) => {
     try {
-        const { fname, mname, lname, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date,status } = req.body
+        const { fname, mname, lname, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date, status } = req.body
 
         const errors = validationResult(req)
 
@@ -375,7 +391,7 @@ app.post('/insertStudent', [
             if (rs.rows.length > 0) {
                 res.json({ status: '200', message: 'Student already exist' })
             } else {
-                await pool.query('insert into newstudent(fname,mname,lname,gender,dob,twelvem,tenm,address,state,mbno,city,fillfees,addharno,tid,pcode,tname,date,status) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)', [fname, mname, lname, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date,status])
+                await pool.query('insert into newstudent(fname,mname,lname,gender,dob,twelvem,tenm,address,state,mbno,city,fillfees,addharno,tid,pcode,tname,date,status) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)', [fname, mname, lname, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date, status])
                 res.json({ status: '200', message: 'Student addmission Application Successed !' })
             }
         }
@@ -505,8 +521,8 @@ app.post('/studDataOntid', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() })
         } else {
-            const r = await pool.query('select * from newstudent where tid = $1',[tid])
-            res.json({status : '200', message : 'Success', data : r.rows})
+            const r = await pool.query('select * from newstudent where tid = $1', [tid])
+            res.json({ status: '200', message: 'Success', data: r.rows })
         }
     } catch (err) {
         console.error(err.message)
@@ -516,69 +532,69 @@ app.post('/studDataOntid', [
 
 app.delete('/delStaff', [
     body('id').notEmpty().withMessage("ID is requeried")
-], async (req,res) =>{
-    try{
+], async (req, res) => {
+    try {
         const { id } = req.body
         const errors = validationResult(req)
 
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() })
         } else {
-            const r = await pool.query('delete from staff where sid = $1',[id])
-            res.json({status : '200', message : 'Delete Success'})
+            const r = await pool.query('delete from staff where sid = $1', [id])
+            res.json({ status: '200', message: 'Delete Success' })
         }
-    }catch(err){
+    } catch (err) {
         console.error(err.message);
         res.status(500).withMessage("Server error")
     }
 })
 
-app.put('/addLockStutas',[
+app.put('/addLockStutas', [
     body('sid').notEmpty().withMessage("Staff id is requered")
-], async (req,res)=>{
-    try{
-        const {sid} = req.body
+], async (req, res) => {
+    try {
+        const { sid } = req.body
         await pool.query("update staff set stutas = 'lock' where sid = $1", [sid])
-        res.json({status : '200', message : 'Permission Changed Successfully.'})
+        res.json({ status: '200', message: 'Permission Changed Successfully.' })
 
-    }catch(err){
+    } catch (err) {
         console.error(err.message);
         res.status(500).withMessage("Server error")
     }
 })
 
-app.put('/addUnlockStutas',[
+app.put('/addUnlockStutas', [
     body('sid').notEmpty().withMessage("Staff id is requered")
-], async (req,res)=>{
-    try{
-        const {sid} = req.body
+], async (req, res) => {
+    try {
+        const { sid } = req.body
         await pool.query("update staff set stutas = 'unlock' where sid = $1", [sid])
-        res.json({status : '200', message : 'Permission Changed Successfully.'})
+        res.json({ status: '200', message: 'Permission Changed Successfully.' })
 
-    }catch(err){
+    } catch (err) {
         console.error(err.message);
         res.status(500).withMessage("Server error")
     }
 })
 
-app.post('/getStatus',[
+app.post('/getStatus', [
     body('sid').notEmpty().withMessage('Staff id is requeried')
-],async (req,res)=>{
-    try{
-        const {sid} = req.body
-        const rs = await pool.query('select stutas from staff where sid = $1',[sid])
-        res.json({status : '200', message : 'Success', StatusData : rs.rows})
-    }catch(err){
+], async (req, res) => {
+    try {
+        const { sid } = req.body
+        const rs = await pool.query('select stutas from staff where sid = $1', [sid])
+        res.json({ status: '200', message: 'Success', StatusData: rs.rows })
+    } catch (err) {
         console.error(err.message);
         res.status(500).withMessage("Server error")
     }
 })
 
-app.get('/GetEvent', [], async (req,res)=>{
-    try{
+app.get('/GetEvent', [], async (req, res) => {
+    try {
         const rs = await pool.query('select * from events')
-        res.json({status : '200', message : 'Success', EventData : rs.rows})
-    }catch(err){
+        res.json({ status: '200', message: 'Success', EventData: rs.rows })
+    } catch (err) {
         console.error(err.message);
         res.status(500).withMessage("Server error")
     }
@@ -588,18 +604,18 @@ app.post('/insertEvent', [
     body('event_title').notEmpty().withMessage('Title is requred'),
     body('event_date').notEmpty().withMessage('Date is requered'),
     body('event_time').notEmpty().withMessage('Time is requeried')
-], async (req,res)=>{
-    try{
+], async (req, res) => {
+    try {
         const { event_title, event_date, event_time } = req.body
         const errors = validationResult(req)
 
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() })
         } else {
-            const r = await pool.query('insert into events(event_title, event_date, event_time) values ($1,$2,$3)',[event_title, event_date, event_time ])
-            res.json({status : '200', message : 'Event Added Successfully'})
+            const r = await pool.query('insert into events(event_title, event_date, event_time) values ($1,$2,$3)', [event_title, event_date, event_time])
+            res.json({ status: '200', message: 'Event Added Successfully' })
         }
-    }catch(err){
+    } catch (err) {
         console.error(err.message);
         res.status(500).withMessage("Server error")
     }
