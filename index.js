@@ -261,9 +261,9 @@ app.put('/updateFees', [
     body('id').notEmpty().withMessage("ID is required")
 ], async (req, res) => {
     try {
-        const {fee,id} = req.body
-        const rs = await pool.query('update newstudent set fillfees = $1 where id = $2',[fee,id])
-        res.json({status : '200', message : 'success' , fee : res.rows})
+        const { fee, id } = req.body
+        const rs = await pool.query('update newstudent set fillfees = $1 where id = $2', [fee, id])
+        res.json({ status: '200', message: 'success', fee: res.rows })
     } catch (err) {
         console.error(err.message)
         // res.status(500).withMessage('Server Error')
@@ -361,6 +361,7 @@ app.post('/insertStudent', [
     body('fname').notEmpty().withMessage('First name is required.'),
     body('mname').notEmpty().withMessage('Middle name is required.'),
     body('lname').notEmpty().withMessage('Last name is required.'),
+    body('class1').notEmpty().withMessage("Class is required"),
     body('gender').notEmpty().withMessage('Gender is required.'),
     body('dob').notEmpty().withMessage('Date of Birth is required.'),
     body('twelvem').notEmpty().withMessage('12th Marks is required.'),
@@ -379,7 +380,7 @@ app.post('/insertStudent', [
 
 ], async (req, res) => {
     try {
-        const { fname, mname, lname, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date, status } = req.body
+        const { fname, mname, lname, class1, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date, status } = req.body
 
         const errors = validationResult(req)
 
@@ -391,7 +392,7 @@ app.post('/insertStudent', [
             if (rs.rows.length > 0) {
                 res.json({ status: '200', message: 'Student already exist' })
             } else {
-                await pool.query('insert into newstudent(fname,mname,lname,gender,dob,twelvem,tenm,address,state,mbno,city,fillfees,addharno,tid,pcode,tname,date,status) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)', [fname, mname, lname, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date, status])
+                await pool.query('insert into newstudent(fname,mname,lname,class,gender,dob,twelvem,tenm,address,state,mbno,city,fillfees,addharno,tid,pcode,tname,date,status) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)', [fname, mname, lname, class1, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date, status])
                 res.json({ status: '200', message: 'Student addmission Application Successed !' })
             }
         }
