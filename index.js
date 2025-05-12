@@ -254,6 +254,15 @@ app.post('/studDataOnStudentId', async (req, res) => {
     }
 });
 
+app.put('/updateFee', [], async (req, res) => {
+    try {
+        const { fee, id } = req.body;
+        await pool.query('update newstudent set fillfees = $1 where id = $2', [fee, id])
+    } catch (err) {
+        console.error(err.message)
+    }
+})
+
 // API for the update the fees of the student 
 
 app.put('/updateFees', [
@@ -263,7 +272,7 @@ app.put('/updateFees', [
     try {
         const { fee, id } = req.body
         const rs = await pool.query('update newstudent set fillfees = $1 where id = $2', [fee, id])
-        res.json({ status: '200', message: 'success', fee: res.rows })
+        res.json({ status: '200', message: 'success', fee: rs.rows })
     } catch (err) {
         console.error(err.message)
         // res.status(500).withMessage('Server Error')
@@ -406,7 +415,7 @@ app.post('/insertStudent', [
 // Select the total fees
 app.get('/totolfees', async (req, res) => {
     try {
-        const rs = await pool.query('select count(id) * 16000 as total from newstudent')
+        const rs = await pool.query('select count(id) * 20000 as total from newstudent')
         res.json({ status: '200', message: 'Success', ttl: rs.rows })
     } catch (err) {
         console.error(err.message)
@@ -621,6 +630,124 @@ app.post('/insertEvent', [
         res.status(500).withMessage("Server error")
     }
 })
+
+
+
+
+
+
+
+
+
+
+
+
+
+const multer = require('multer');
+const fs = require('fs');
+const cors = require('cors');
+const upload = multer({ dest: 'uploads/' });
+
+app.use(cors());
+app.use(express.static('public')); // Serve frontend
+
+app.post('/upload', upload.single('image'), async (req, res) => {
+    const { originalname, path: tempPath } = req.file;
+    const imageData = fs.readFileSync(tempPath);
+
+    try {
+        await pool.query(
+            'INSERT INTO images (name, data) VALUES ($1, $2)',
+            [originalname, imageData]
+        );
+        fs.unlinkSync(tempPath); // delete temp file
+        res.send('Image uploaded and stored in PostgreSQL.');
+        res.json({ status: 'success' })
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error uploading image.');
+    }
+});
+
+app.get('/image/:id', async (req, res) => {
+    const imageId = req.params.id;
+    try {
+        const result = await pool.query('SELECT data, name FROM images WHERE id = $1', [imageId]);
+        if (result.rows.length === 0) {
+            return res.status(404).send('Image not found');
+        }
+        const image = result.rows[0];
+        res.set('Content-Type', 'image/jpeg'); // or detect MIME type
+        res.send(image.data);
+        res.json({ message: 'Image uploaded!', id: imageId });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error retrieving image');
+    }
+});
+
+//   const result = await pool.query(
+//     'INSERT INTO images (name, data) VALUES ($1, $2) RETURNING id',
+//     [originalname, imageData]
+//   );
+//   const imageId = result.rows[0].id;
+
+// Get all image IDs
+app.get('/images', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id FROM images ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error fetching image list');
+    }
+});
+
+app.delete('/deleteEvent', [
+    body('eid').notEmpty().withMessage('Event id is required')
+], async (req, res) => {
+    try {
+        const { eid } = req.body
+        await pool.query('delete from events where eid = $1', [eid])
+        res.json({ status: '200', message: 'success' })
+    } catch (err) {
+        console.error(err.message)
+    }
+})
+
+app.put('/updateEvent', [
+    body('title').notEmpty().withMessage('Title is required'),
+    body('date').notEmpty().withMessage('date is required'),
+    body('time').notEmpty().withMessage('time is required'),
+    body('eid').notEmpty().withMessage('Eid is required')
+], async (req, res) => {
+    try {
+        const { title, date, time, eid } = req.body
+
+        await pool.query('update table events set title = $1, date = $2, time = $3 where eid = $4', [title, date, time, eid])
+        res.json({ status: '200', message: 'success' })
+
+    } catch (err) {
+        console.error(err.message)
+    }
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 app.listen(port, () => {
     console.log(`Server Starts on Port No. http://localhost:${port}`)
 })
