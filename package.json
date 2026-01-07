@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "node": "node index"
+    "node": "node index",
+    "start" : "node index.js"
   },
   "author": "Shubham Randive",
   "license": "ISC",
