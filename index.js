@@ -735,58 +735,51 @@
 // app.listen(port, () => {
 //     console.log(`Server Starts on Port No. http://localhost:${port}`)
 // })
+require('dotenv').config();   // << IMPORTANT for Render to load .env
 
-require("dotenv").config();
-const express = require('express');
-const pool = require('./db');
-const app = express();
-const path = require('path');
-const bodyparser = require('body-parser');
-const jwt = require('jsonwebtoken');
-const { body, validationResult } = require('express-validator');
-const bcrypt = require('bcrypt');
-const multer = require('multer');
-const fs = require('fs');
-const cors = require('cors');
+const express = require('express')
+const pool = require('./db')
+const app = express()
+const path = require('path')
+const bodyparser = require('body-parser')
+const port = process.env.PORT || 5000;   // << Render FIX
+const jwt = require('jsonwebtoken')
+const { body, validationResult } = require('express-validator')
+const bcrypt = require('bcrypt')
+const { error } = require('console')
 
-const PORT = process.env.PORT || 5000;
+app.use(bodyparser.json())
 
-app.use(bodyparser.json());
-app.use(cors());
-
-// CORS
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "DELETE,GET,HEAD,OPTIONS,POST,PUT");
     res.header("Access-Control-Allow-Headers", "Origin,X-Requested-With,Content-Type,Authorization");
     next();
-});
+})
 
-/* ---------------- TOKEN GENERATION ---------------- */
-app.post('/api/auth/getToken', (req, res) => {
-    const { key } = req.body;
-    const token = jwt.sign({ key }, 'super-secret', { expiresIn: '24h' });
-    res.send({ token });
-});
+app.post('/api/auth/getToken', [], (req, res) => {
+    const { key } = req.body
+    const token = jwt.sign({ key }, 'super-secret', { expiresIn: '24h' })
+    res.send({ token })
+})
 
-/* ---------------- AUTH MIDDLEWARE ---------------- */
+
 async function auth(req, res, next) {
     try {
-        const token = req.headers.authorization.replace('Bearer ', '');
-        await jwt.verify(token, 'super-secret');
-        req.token = token;
-        next();
+        const token = req.headers.authorization.replace('Bearer ', '')
+        await jwt.verify(token, 'super-secret')
+        req.token = token
+        next()
     } catch (err) {
-        res.status(401).send({ error: 'Please authenticate' });
+        res.status(401).send({ error: 'Please authenticate' })
     }
 }
 
-/* ---------------- ROOT API ---------------- */
-app.get('/', (req, res) => {
-    res.send('APIs for Collage Admission Process (Hosted on Render).');
-});
 
-/* ---------------- UPDATE STUDENT ---------------- */
+app.get('/', async (req, res) => {
+    res.send('APIs for the Collage Addmission Process.');
+})
+
 app.put('/uptStudData', [
     body('fname').notEmpty().withMessage("First Name is required."),
     body('mname').notEmpty().withMessage("Second Name is required."),
@@ -801,30 +794,38 @@ app.put('/uptStudData', [
     body('id').notEmpty().withMessage("ID is required.")
 ], async (req, res) => {
     try {
-        const errors = validationResult(req);
+        const { fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id } = req.body
+
+        const errors = validationResult(req)
+
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            return res.status(400).json({ errors: errors.array() })
+        } else {
+            await pool.query('update newstudent set fname = $1, mname = $2, lname = $3, gender = $4, twelvem = $5, tenm = $6, address = $7, state = $8, fillfees = $9, addharno = $10 where id = $11', [fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id])
+            res.json({ status: '200', message: 'Update Success' })
         }
-
-        const { fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id } = req.body;
-
-        await pool.query(
-            'UPDATE newstudent SET fname = $1, mname = $2, lname = $3, gender = $4, twelvem = $5, tenm = $6, address = $7, state = $8, fillfees = $9, addharno = $10 WHERE id = $11',
-            [fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id]
-        );
-        res.json({ status: '200', message: 'Update Success' });
-
     } catch (err) {
-        console.error(err.message);
-        res.status(500).json({ message: "Server Error" });
+        console.error(err.message)
+        res.status(500).withMessage("Server Error")
     }
-});
+})
 
-/* ------------ PATCH SINGLE UPDATE ------------- */
+// Update the single record fromthe database
 app.patch('/inrtStudent', [
+    body('fname').optional().notEmpty().withMessage("First Name is required."),
+    body('mname').optional().notEmpty().withMessage("Second Name is required."),
+    body('lname').optional().notEmpty().withMessage("Last Name is required."),
+    body('gender').optional().notEmpty().withMessage("Gender is required."),
+    body('twm').optional().notEmpty().withMessage("12th is required."),
+    body('tenm').optional().notEmpty().withMessage("10th is required."),
+    body('add').optional().notEmpty().withMessage("Address is required."),
+    body('state').optional().notEmpty().withMessage("State is required."),
+    body('ffees').optional().notEmpty().withMessage("Fill fees is required."),
+    body('aadharno').optional().notEmpty().withMessage("Aadhar no. is required."),
     body('id').notEmpty().withMessage("ID is required.")
 ], async (req, res) => {
     try {
+
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
@@ -832,59 +833,82 @@ app.patch('/inrtStudent', [
 
         const { fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno, id } = req.body;
 
-        const findStudent = await pool.query('SELECT * FROM newstudent WHERE id = $1', [id]);
-        if (findStudent.rows.length === 0) {
+        const findStudentResult = await pool.query('SELECT * FROM newstudent WHERE id = $1', [id]);
+        const student = findStudentResult.rows[0];
+
+        if (!student) {
             return res.status(404).json({ message: 'Student not found' });
         }
 
-        let query = "UPDATE newstudent SET";
-        let values = [];
-        let i = 1;
+        let updateQuery = 'UPDATE newstudent SET';
+        let updateValues = [];
+        let queryIndex = 1;
 
-        const fields = { fname, mname, lname, gender, twm, tenm, add, state, ffees, aadharno };
-
-        for (const key in fields) {
-            if (fields[key]) {
-                query += ` ${key} = $${i},`;
-                values.push(fields[key]);
-                i++;
-            }
+        if (fname) {
+            updateQuery += ` fname = $${queryIndex},`;
+            updateValues.push(fname);
+            queryIndex++;
+        }
+        if (mname) {
+            updateQuery += ` mname = $${queryIndex},`;
+            updateValues.push(mname);
+            queryIndex++;
+        }
+        if (lname) {
+            updateQuery += ` lname = $${queryIndex},`;
+            updateValues.push(lname);
+            queryIndex++;
+        }
+        if (gender) {
+            updateQuery += ` gender = $${queryIndex},`;
+            updateValues.push(gender);
+            queryIndex++;
+        }
+        if (twm) {
+            updateQuery += ` twm = $${queryIndex},`;
+            updateValues.push(twm);
+            queryIndex++;
+        }
+        if (tenm) {
+            updateQuery += ` tenm = $${queryIndex},`;
+            updateValues.push(tenm);
+            queryIndex++;
+        }
+        if (add) {
+            updateQuery += ` add = $${queryIndex},`;
+            updateValues.push(add);
+            queryIndex++;
+        }
+        if (state) {
+            updateQuery += ` state = $${queryIndex},`;
+            updateValues.push(state);
+            queryIndex++;
+        }
+        if (ffees) {
+            updateQuery += ` ffees = $${queryIndex},`;
+            updateValues.push(ffees);
+            queryIndex++;
+        }
+        if (aadharno) {
+            updateQuery += ` aadharno = $${queryIndex},`;
+            updateValues.push(aadharno);
+            queryIndex++;
         }
 
-        query = query.slice(0, -1);
-        query += ` WHERE id = $${i}`;
-        values.push(id);
+        updateQuery = updateQuery.slice(0, -1);
+        updateQuery += ` WHERE id = $${queryIndex}`;
+        updateValues.push(id);
 
-        await pool.query(query, values);
+        await pool.query(updateQuery, updateValues);
 
-        const updatedData = await pool.query("SELECT * FROM newstudent WHERE id = $1", [id]);
+        const updatedStudentResult = await pool.query('SELECT * FROM newstudent WHERE id = $1', [id]);
+        const updatedStudent = updatedStudentResult.rows[0];
 
         res.status(200).json({
             status: '200',
             message: 'Student updated successfully',
-            updatedStudent: updatedData.rows[0]
+            updatedStudent
         });
-
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).json({ message: "Server Error" });
-    }
-});
-
-/* ---------------- STAFF LOGIN ---------------- */
-app.post('/staff', [
-    body('email').notEmpty(),
-    body('pass').notEmpty()
-], async (req, res) => {
-    try {
-        const { email, pass } = req.body;
-        const rs = await pool.query('SELECT * FROM staff WHERE email = $1 AND password = $2', [email, pass]);
-
-        if (rs.rows.length > 0) {
-            res.json({ status: '200', message: 'success', data: rs.rows });
-        } else {
-            res.json({ message: 'Username and Password are invalid' });
-        }
 
     } catch (err) {
         console.error(err.message);
@@ -892,8 +916,433 @@ app.post('/staff', [
     }
 });
 
-/* ---------------- IMAGE UPLOAD ---------------- */
+
+app.post('/staff', [
+    body('email').notEmpty().withMessage('Username is required'),
+    body('pass').notEmpty().withMessage('Password is required')
+], async (req, res) => {
+    try {
+        const { email, pass } = req.body
+        const rs = await pool.query('select * from staff where email = $1 and password = $2', [email, pass])
+
+        if (rs.rows.length > 0) {
+            res.json({ status: '200', message: 'success', data: rs.rows })
+        } else {
+            res.json({ message: 'Username and Password are invalid' })
+        }
+
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage('Server Error')
+    }
+})
+
+
+app.get('/Sdata', async (req, res) => {
+    const rs = await pool.query('select * from staff order by tname asc')
+    res.json({ status: '200', message: 'Success', data: rs.rows })
+})
+
+app.get("/TeacherNameData", [], async (req, res) => {
+    const rs = await pool.query('select * from staff where tname = $1', ['testreviewer'])
+    res.json({ status: '200', message: 'success', data: rs.rows })
+})
+
+app.get('/TeacherName/:teachername', [], async (req, res) => {
+    const { teachername } = req.params
+    const rs = await pool.query('select * from staff where tname = $1', [teachername])
+    res.json({ status: '200', message: 'success', data: rs.rows })
+})
+
+app.get('/studDataOnId/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const rs = await pool.query('select * from newstudent where tid = $1', [id]);
+        if (rs.rows.length === 0) {
+            return res.status(404).json({ status: '404', message: 'Student not found' });
+        }
+        res.json({ status: '200', message: 'success', studData: rs.rows });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ status: '500', message: 'Server Error' });
+    }
+});
+
+app.post('/studDataOnStudentId', async (req, res) => {
+    try {
+        const { id } = req.body;
+        const rs = await pool.query('select * from newstudent where id = $1', [id]);
+        if (rs.rows.length === 0) {
+            return res.status(404).json({ status: '404', message: 'Student not found' });
+        }
+        res.json({ status: '200', message: 'success', studData: rs.rows });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ status: '500', message: 'Server Error' });
+    }
+});
+
+app.put('/updateFee', [], async (req, res) => {
+    try {
+        const { fee, id } = req.body;
+        await pool.query('update newstudent set fillfees = $1 where id = $2', [fee, id])
+    } catch (err) {
+        console.error(err.message)
+    }
+})
+
+app.put('/updateFees', [
+    body('fee').notEmpty().withMessage("Fee is required"),
+    body('id').notEmpty().withMessage("ID is required")
+], async (req, res) => {
+    try {
+        const { fee, id } = req.body
+        const rs = await pool.query('update newstudent set fillfees = $1 where id = $2', [fee, id])
+        res.json({ status: '200', message: 'success', fee: rs.rows })
+    } catch (err) {
+        console.error(err.message)
+    }
+})
+
+app.post('/staffData', [
+    body('email').notEmpty().withMessage('Username is required'),
+    body('pass').notEmpty().withMessage('Password is required')
+], async (req, res) => {
+    try {
+        const { email, pass } = req.body
+        const rs = await pool.query('select * from staff where email = $1 and password = $2', [email, pass])
+
+        if (rs.rows.length > 0) {
+            res.json({ status: '200', message: 'success', data: rs.rows })
+        } else {
+            res.json({ message: 'Username and Password are invalid' })
+        }
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage('Server Error')
+    }
+})
+
+app.post('/insertStaff', [
+    body('tname').notEmpty().withMessage("Name is required."),
+    body('email').isEmail().withMessage('Email is required'),
+    body('username').notEmpty().withMessage("Username is required"),
+    body('password').notEmpty().withMessage('Password is required')
+], async (req, res) => {
+    try {
+        const { tname, email, username, password } = req.body
+
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        } else {
+            const rs = await pool.query('select email from staff where email = $1', [email]);
+            if (rs.rows.length > 0) {
+                res.json({ status: '200', message: 'Email is already exist...', data: rs.rows })
+            } else {
+                await pool.query('insert into staff(tname,email,username,password) values ($1,$2,$3,$4)', [tname, email, username, password]);
+                res.json({ status: '200', message: 'Admin Registration Successful', data: req.body })
+            }
+        }
+
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage('Server Error')
+    }
+})
+
+app.get('/studData', [], async (req, res) => {
+    try {
+        const rs = await pool.query('select * from newstudent order by fname asc')
+        res.json({ status: '200', message: 'success', studData: rs.rows })
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage('Server Error')
+    }
+})
+
+const today = new Date();
+
+const formattedDate = today.toLocaleDateString('en-IN', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'Asia/Kolkata'
+});
+
+app.put('/updateAdmissionStatus',
+    [
+        body('id').notEmpty().withMessage('ID is required'),
+        body('status').notEmpty().withMessage('Status is required'),
+        body('admin_aprov_date').notEmpty().withMessage('Status is required'),
+    ],
+    async (req, res) => {
+        try {
+            const { id, status, admin_aprov_date = formattedDate, reject_resone } = req.body;
+
+            const rs = await pool.query('update  newstudent set status = $1, admin_aprov_date = $2 , reject_resone = $3  where id = $4', [status, admin_aprov_date, reject_resone, id])
+            res.json({ status: '200', message: 'Success' })
+        } catch (err) {
+            console.error(err.message)
+        }
+    })
+
+app.post('/insertStudent', [
+    body('fname').notEmpty().withMessage('First name is required.'),
+    body('mname').notEmpty().withMessage('Middle name is required.'),
+    body('lname').notEmpty().withMessage('Last name is required.'),
+    body('class1').notEmpty().withMessage("Class is required"),
+    body('gender').notEmpty().withMessage('Gender is required.'),
+    body('dob').notEmpty().withMessage('Date of Birth is required.'),
+    body('twelvem').notEmpty().withMessage('12th Marks is required.'),
+    body('tenm').notEmpty().withMessage('10th Marks  is required.'),
+    body('add').notEmpty().withMessage('Add is required.'),
+    body('state').notEmpty().withMessage('State is required.'),
+    body('mb').notEmpty().withMessage('Mb is required.'),
+    body('pcode').notEmpty().withMessage('Postcode is required.'),
+    body('city').notEmpty().withMessage('City is required.'),
+    body('fee').notEmpty().withMessage('Fees is required.'),
+    body('addharno').notEmpty().withMessage('Aadhar no. is required.'),
+    body('tid').notEmpty().withMessage('Teacher ID is required.'),
+    body('tname').notEmpty().withMessage('Teacher Name is required.'),
+    body('date').notEmpty().withMessage('Date is required.'),
+    body('status').notEmpty().withMessage('Date is required.')
+], async (req, res) => {
+    try {
+        const { fname, mname, lname, class1, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date, status } = req.body
+
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        } else {
+            const rs = await pool.query('select addharno from newstudent where addharno = $1', [addharno])
+
+            if (rs.rows.length > 0) {
+                res.json({ status: '200', message: 'Student already exist' })
+            } else {
+                await pool.query('insert into newstudent(fname,mname,lname,class,gender,dob,twelvem,tenm,address,state,mbno,city,fillfees,addharno,tid,pcode,tname,date,status) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)', [fname, mname, lname, class1, gender, dob, twelvem, tenm, add, state, mb, city, fee, addharno, tid, pcode, tname, date, status])
+                res.json({ status: '200', message: 'Student addmission Application Successed !' })
+            }
+        }
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage("Server Error")
+
+    }
+})
+
+app.get('/totolfees', async (req, res) => {
+    try {
+        const rs = await pool.query('select count(id) * 20000 as total from newstudent')
+        res.json({ status: '200', message: 'Success', ttl: rs.rows })
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage('Server Error')
+    }
+})
+
+app.get('/totolcollectivefees', async (req, res) => {
+    try {
+        const rs = await pool.query('select sum(fillfees) as totalcollectivefee from newstudent')
+        res.json({ status: '200', message: 'Success', total: rs.rows })
+
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage('Server Error')
+    }
+})
+
+app.get('/studCount', async (req, res) => {
+    try {
+        const rs = await pool.query('select count(id) as ttlStudent from newstudent')
+        res.json({ status: '200', message: 'Success', coutn: rs.rows })
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage('Server Error')
+    }
+})
+
+app.get('/emptySlot', async (req, res) => {
+    try {
+        const rs = await pool.query('select 120 - count(id) as emptySlot from newstudent')
+        res.json({ status: '200', message: 'Success', emptySlot: rs.rows })
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage('Server Error')
+    }
+})
+
+app.post('/date', [
+    body('date').notEmpty().withMessage("Date is required")
+], async (req, res) => {
+    try {
+        const { date } = req.body
+
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        } else {
+            await pool.query('insert into dt(date) values ($1)', [date])
+            res.json({ status: '200', message: 'Date Inserted' })
+        }
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage('Server Error')
+    }
+})
+
+app.post('/studDataOnId', [
+    body('id').notEmpty().withMessage("Student id is required")
+], async (req, res) => {
+    try {
+        const { id } = req.body
+
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        } else {
+            const rs = await pool.query('select * from newstudent where id = $1', [id])
+            res.json({ status: '200', message: 'Success', data: rs.rows })
+        }
+    } catch (err) {
+        console.error(err.message)
+        res.status(500).withMessage("Srever Error.")
+    }
+})
+
+app.delete('/delStudent', [
+    body('id').notEmpty().withMessage("ID is requeried")
+], async (req, res) => {
+    try {
+
+        const { id } = req.body
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        } else {
+            await pool.query('delete from newstudent where id = $1', [id])
+            res.json({ status: '200', message: 'Delete Success' })
+        }
+    } catch (err) {
+        console.error(err.message)
+    }
+})
+
+app.post('/studDataOntid', [
+    body('tid').notEmpty().withMessage('Teacher ID is required')
+], async (req, res) => {
+    try {
+        const { tid } = req.body
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        } else {
+            const r = await pool.query('select * from newstudent where tid = $1', [tid])
+            res.json({ status: '200', message: 'Success', data: r.rows })
+        }
+    } catch (err) {
+        console.error(err.message)
+    }
+})
+
+app.delete('/delStaff', [
+    body('id').notEmpty().withMessage("ID is requeried")
+], async (req, res) => {
+    try {
+        const { id } = req.body
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        } else {
+            const r = await pool.query('delete from staff where sid = $1', [id])
+            res.json({ status: '200', message: 'Delete Success' })
+        }
+    } catch (err) {
+        console.error(err.message);
+    }
+})
+
+app.put('/addLockStutas', [
+    body('sid').notEmpty().withMessage("Staff id is requered")
+], async (req, res) => {
+    try {
+        const { sid } = req.body
+        await pool.query("update staff set stutas = 'lock' where sid = $1", [sid])
+        res.json({ status: '200', message: 'Permission Changed Successfully.' })
+
+    } catch (err) {
+        console.error(err.message);
+    }
+})
+
+app.put('/addUnlockStutas', [
+    body('sid').notEmpty().withMessage("Staff id is requered")
+], async (req, res) => {
+    try {
+        const { sid } = req.body
+        await pool.query("update staff set stutas = 'unlock' where sid = $1", [sid])
+        res.json({ status: '200', message: 'Permission Changed Successfully.' })
+
+    } catch (err) {
+        console.error(err.message);
+    }
+})
+
+app.post('/getStatus', [
+    body('sid').notEmpty().withMessage('Staff id is requeried')
+], async (req, res) => {
+    try {
+        const { sid } = req.body
+        const rs = await pool.query('select stutas from staff where sid = $1', [sid])
+        res.json({ status: '200', message: 'Success', StatusData: rs.rows })
+    } catch (err) {
+        console.error(err.message);
+    }
+})
+
+app.get('/GetEvent', [], async (req, res) => {
+    try {
+        const rs = await pool.query('select * from events')
+        res.json({ status: '200', message: 'Success', EventData: rs.rows })
+    } catch (err) {
+        console.error(err.message);
+    }
+})
+
+app.post('/insertEvent', [
+    body('event_title').notEmpty().withMessage('Title is requred'),
+    body('event_date').notEmpty().withMessage('Date is requered'),
+    body('event_time').notEmpty().withMessage('Time is requeried')
+], async (req, res) => {
+    try {
+        const { event_title, event_date, event_time } = req.body
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() })
+        } else {
+            const r = await pool.query('insert into events(event_title, event_date, event_time) values ($1,$2,$3)', [event_title, event_date, event_time])
+            res.json({ status: '200', message: 'Event Added Successfully' })
+        }
+    } catch (err) {
+        console.error(err.message);
+    }
+})
+
+const multer = require('multer');
+const fs = require('fs');
+const cors = require('cors');
 const upload = multer({ dest: 'uploads/' });
+
+app.use(cors());
 app.use(express.static('public'));
 
 app.post('/upload', upload.single('image'), async (req, res) => {
@@ -906,8 +1355,8 @@ app.post('/upload', upload.single('image'), async (req, res) => {
             [originalname, imageData]
         );
         fs.unlinkSync(tempPath);
-        res.json({ status: 'success', message: 'Image uploaded!' });
-
+        res.send('Image uploaded and stored in PostgreSQL.');
+        res.json({ status: 'success' })
     } catch (error) {
         console.error(error);
         res.status(500).send('Error uploading image.');
@@ -915,33 +1364,61 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 });
 
 app.get('/image/:id', async (req, res) => {
+    const imageId = req.params.id;
     try {
-        const result = await pool.query('SELECT data, name FROM images WHERE id = $1', [req.params.id]);
-
+        const result = await pool.query('SELECT data, name FROM images WHERE id = $1', [imageId]);
         if (result.rows.length === 0) {
             return res.status(404).send('Image not found');
         }
-
+        const image = result.rows[0];
         res.set('Content-Type', 'image/jpeg');
-        res.send(result.rows[0].data);
-
+        res.send(image.data);
+        res.json({ message: 'Image uploaded!', id: imageId });
     } catch (error) {
         console.error(error);
         res.status(500).send('Error retrieving image');
     }
 });
 
-/* ---------------- EVENTS CRUD ---------------- */
-app.get('/GetEvent', async (req, res) => {
+app.get('/images', async (req, res) => {
     try {
-        const rs = await pool.query('SELECT * FROM events');
-        res.json({ status: '200', message: 'Success', EventData: rs.rows });
-    } catch (err) {
-        res.status(500).json({ message: "Server error" });
+        const result = await pool.query('SELECT id FROM images ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error fetching image list');
     }
 });
 
-/* ---------------- SERVER PORT ---------------- */
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+app.delete('/deleteEvent', [
+    body('eid').notEmpty().withMessage('Event id is required')
+], async (req, res) => {
+    try {
+        const { eid } = req.body
+        await pool.query('delete from events where eid = $1', [eid])
+        res.json({ status: '200', message: 'success' })
+    } catch (err) {
+        console.error(err.message)
+    }
+})
+
+app.put('/updateEvent', [
+    body('title').notEmpty().withMessage('Title is required'),
+    body('date').notEmpty().withMessage('date is required'),
+    body('time').notEmpty().withMessage('time is required'),
+    body('eid').notEmpty().withMessage('Eid is required')
+], async (req, res) => {
+    try {
+        const { title, date, time, eid } = req.body
+
+        await pool.query('update table events set title = $1, date = $2, time = $3 where eid = $4', [title, date, time, eid])
+        res.json({ status: '200', message: 'success' })
+
+    } catch (err) {
+        console.error(err.message)
+    }
+})
+
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`)
+})
