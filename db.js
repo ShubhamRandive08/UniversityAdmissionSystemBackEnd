@@ -1,13 +1,14 @@
-const {Pool} = require('pg')
+import pg from "pg";
 
-const pool = new Pool({
-    user : 'postgres',
-    host : 'localhost',
-    database : 'CollageAddmissioinDatabase',
-    password : 'Kingsr@08',
-    port : 5432
-})
+const pool = new pg.Pool({
+  host: process.env.PGHOST,
+  port: Number(process.env.PGPORT),
+  user: process.env.PGUSER,
+  password: process.env.PGPASSWORD,
+  database: process.env.PGDATABASE,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
-
-
-module.exports = pool
+export default pool;
