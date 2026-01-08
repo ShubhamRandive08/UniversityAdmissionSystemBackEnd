@@ -1,0 +1,33 @@
+How to connect the Render's Postgres DB
+
+Step 1. - We need to create the DB on the Render with following steps
+
+	-- Go on any browser(Google) and search as render web hosting
+	-- Then Login there if you have account. So firstly sing up and then sign in with your credentials
+	-- Then you are able to see home interface of the 'Render' 
+	-- Then click on the 'New' button
+	-- Now you need to click on the "Postgres" option
+	-- Then provide your name of the instance and provide the all info. which are mandatory
+	-- Select your plan then Render will be provide the there credentials to you. Copy these credentials 
+		
+		Credentials Example :
+			HOSTNAME : dpg-d5f26h7pm1nc738393vg-a
+			PORT : 5432
+			DATABASE : college_admission_db_9qe8
+			USERNAME : college_admission_db_9qe8_user
+			PASSWORD : 9gxZJ2JUAllTyJmG0zoXWATtZsDvR8DJ
+			INTERNAL DB URL : postgresql://college_admission_db_9qe8_user:9gxZJ2JUAllTyJmG0zoXWATtZsDvR8DJ@dpg-d5f26h7pm1nc738393vg-a/college_admission_db_9qe8
+			EXTERNAL DB URL : postgresql://college_admission_db_9qe8_user:9gxZJ2JUAllTyJmG0zoXWATtZsDvR8DJ@dpg-d5f26h7pm1nc738393vg-a.oregon-									  postgres.render.com/college_admission_db_9qe8
+			PSQL COMMAND : PGPASSWORD=9gxZJ2JUAllTyJmG0zoXWATtZsDvR8DJ psql -h dpg-d5f26h7pm1nc738393vg-a.oregon-postgres.render.com -U college_admission_db_9qe8_user 					       college_admission_db_9qe8
+
+Step 2. - Create you own server on pgAdmin with the help of the provide credentials by the Render 
+	
+	-- Open the pgAdmin (Postgres DB)
+	-- After that you can able to see the one option which is "Add New Server", click on that
+	-- Then you need to provide the Name in General tab
+	-- Next you need go in 'connection' tab and provide the values of the 'Hostname/address (Ex, dpg-d5f26h7pm1nc738393vg-a.singapore-postgres.render.com) , Password, Username' which is 	    provided by the "Render"
+	-- And end of task click on the 'Save' Button
+
+Step 3. - Then you can able to do any kind of functinality with the help of the pgAdmin 
+
+
